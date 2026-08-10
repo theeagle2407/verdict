@@ -1,304 +1,102 @@
-# 🏗 scaffold-stylus
+# VERDICT
 
-<h4 align="center">
-  <a href="https://arb-stylus.github.io/scaffold-stylus-docs/">Documentation</a> |
-  <a href="https://scaffoldstylus.quantum3labs.com/">Website</a>
-</h4>
+**AI-refereed escrow on Arbitrum Stylus. Disputes resolved by AI, settled trustlessly on-chain.**
 
-🧪 An open-source, up-to-date toolkit for building decentralized applications (dapps) on the Arbitrum blockchain. It's designed to make it easier for developers to create and deploy smart contracts and build user interfaces that interact with those contracts.
+Two parties lock funds against agreed terms. When they disagree, an AI arbitrator reads the terms and both sides' evidence and rules on a fair split. A Rust smart contract on Arbitrum computes the settlement and releases the funds. Neither party has to trust the other — or us.
 
-⚙️ Built using Rust, NextJS, RainbowKit, Stylus, Wagmi, Viem, and TypeScript.
-
-- ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
-- 🪝 **[Custom hooks](https://arb-stylus.github.io/scaffold-stylus-docs/components)**: Collection of React hooks wrapped around [wagmi](https://wagmi.sh/) to simplify interactions with smart contracts with TypeScript autocompletion.
-- 🧱 [**Components**](https://arb-stylus.github.io/scaffold-stylus-docs/hooks): Collection of common web3 components to quickly build your frontend.
-- 🔥 **Burner Wallet & Local Faucet**: Quickly test your application with a burner wallet and local faucet.
-- 🔐 **Integration with Wallet Providers**: Connect to different wallet providers and interact with the Arbitrum network.
-
-![Debug Contracts tab](./packages/nextjs/public/debug-image.png)
-
-## Requirements
-
-Before you begin, you need to install the following tools:
-
-- [Node (>= v20.18)](https://nodejs.org/en/download/)
-- Yarn ([v2+](https://yarnpkg.com/getting-started/install))
-- [Git](https://git-scm.com/downloads)
-- [Docker](https://docs.docker.com/engine/install/)
-- [Foundry Cast](https://getfoundry.sh/)
-- [Solc (Solidity compiler)](https://docs.soliditylang.org/en/latest/installing-solidity.html)
-
-> **Note: Windows Compatibility**
->
-> Scaffold-Stylus currently does not support Windows natively. If you're using Windows, we recommend:
->
-> - **Use WSL (Windows Subsystem for Linux)** - Install WSL2 and run Scaffold-Stylus within the Linux environment
-> - **Switch to Linux or macOS** - For the best development experience
->
-> For WSL setup, follow the [Microsoft WSL installation guide](https://docs.microsoft.com/en-us/windows/wsl/install).
-
-## Quickstart
-
-To get started with Scaffold-Stylus, follow the steps below:
-
-### 1. Install Stylus tools
-
-First, install Rust and Cargo:
-
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-Check the [Rust installation guide](https://www.rust-lang.org/tools/install) for more information.
-
-Then install the Stylus CLI tools.
-
-> **⚠️ WARNING:** This project requires `cargo-stylus` version `0.10.8` and `rustc` version `1.91.0` (as pinned in `packages/stylus/contracts/rust-toolchain.toml`). Do NOT use `stylusup` to install Stylus tools, as it installs the latest versions which are incompatible with these pinned requirements.
-
-```bash
-cargo install --force --locked cargo-stylus@0.10.8
-```
-
-**Prerequisite:**
-
-- `cargo-stylus` version `0.10.8`
-- `rustc` version match with `packages/stylus/contracts/rust-toolchain.toml`
-
-Set default `toolchain` match `rust-toolchain.toml` and add the `wasm32-unknown-unknown` build target to your Rust compiler:
-
-```bash
-rustup default 1.91.0
-rustup target add wasm32-unknown-unknown --toolchain 1.91.0
-```
-
-You should now have it available as a Cargo subcommand:
-
-```bash
-cargo stylus --help
-```
-
-### 2. Create a new project (recommended)
-
-Use the interactive setup to scaffold a new project:
-
-```bash
-npx create-stylus@latest
-```
-
-Then navigate into your project directory:
-
-```bash
-cd <project-name>
-yarn install
-# Initialize submodules (required for Nitro dev node)
-git submodule update --init --recursive
-```
-
-### 3. Clone this repo & install dependencies (alternative)
-
-```bash
-git clone https://github.com/Arb-Stylus/scaffold-stylus.git
-cd scaffold-stylus
-yarn install
-# Initialize submodules (required for Nitro dev node)
-git submodule update --init --recursive
-```
-
-### 4. Run a local network
-
-In your first terminal:
-
-```bash
-yarn chain
-```
-
-This command starts a local Stylus-compatible network using the Nitro dev node script (`./nitro-devnode/run-dev-node.sh`). The network runs on your local machine and can be used for testing and development. You can customize the Nitro dev node configuration in the `nitro-devnode` submodule.
-
-### 5. Deploy the test contract
-
-In your second terminal:
-
-```bash
-yarn deploy
-```
-
-This command deploys a test smart contract to the local network. The contract is located in `packages/stylus/contracts/your-contract/src` and can be modified to suit your needs. The `yarn deploy` command uses the deploy script located in `packages/stylus/scripts` to deploy the contract to the network. You can also customize the deploy script .
-
-### 6. Start your NextJS app
-
-In your third terminal:
-
-```bash
-yarn start
-```
-
-Visit your app at: `http://localhost:3000`. You can interact with your smart contract using the **Debug Contracts** page, which provides a user-friendly interface for testing your contract's functions and viewing its state.
-
-### 7. Test your smart contract
-
-```bash
-yarn stylus:test
-```
-
-## Development Workflow
-
-- Edit your smart contract `lib.rs` in `packages/stylus/contracts/your-contract/src`
-- Edit your frontend in `packages/nextjs/app`
-- Edit your deployment scripts in `packages/stylus/scripts`
-
-## Create Your Own Contract
-
-Scaffold-Stylus enables you to create and deploy multiple contracts within a single project. Follow the steps below to create and deploy your own contracts.
-
-### Step 1: Generate New Contract
-
-Use the following command to create a new contract and customize it as needed:
-
-```bash
-yarn new-module <contract-name>
-```
-
-The generated contract will be located in `packages/stylus/contracts/<contract-name>`.
-
-**Workspace structure:** `packages/stylus/contracts` is a Cargo workspace with `members = ["*"]`. `yarn new-module <name>` (via `scripts/new_module.sh`) scaffolds the new contract under `contracts/` — the glob auto-discovers it, no manual wiring needed.
-
-### Step 2: Validate Your Contract Before Deployment
-
-Before deploying, it's recommended to validate your contract size using `cargo stylus check`:
-
-```bash
-cd packages/stylus/contracts/<contract-name>
-cargo stylus check
-```
-
-This command performs several important checks:
-
-- **Contract size validation**: Ensures your contract doesn't exceed size limitations
-- **WASM compilation**: Verifies your Rust code compiles to WebAssembly
-- **Deployment hash computation**: Calculates the deployment hash
-- **WASM data fee estimation**: Estimates the cost of deploying your contract
-
-**Contract Size Indicators:**
-
-- 🔴 **Red indicator**: Contract size exceeds limitations - **DO NOT DEPLOY**
-- 🟡 **Yellow/🟢 Green indicator**: Contract size within acceptable limits - **OK to deploy**
-
-> **Important:** When using constructors, error logs from constructor execution may not be visible. Consider using `initialize()` functions instead for better error visibility.
-
-### Step 3: Deploy Your Contract
-
-```bash
-yarn deploy [...options]
-```
-
-This command runs the `deploy.ts` script located in `packages/stylus/scripts`. You can customize this script with your deployment logic.
-
-**Available Options:**
-
-- `--network <network>`: Specify which network to deploy to
-- `--estimate-gas`: Only perform gas estimation without deploying
-- `--max-fee=<maxFee>`: Set maximum fee per gas in gwei
-
-**Note:** Deployment information is automatically saved in `packages/stylus/deployments` by default.
-
-## Deploying to Other Networks
-
-To deploy your contracts to other networks (other than the default local Nitro dev node), you'll need to configure your RPC endpoint and wallet credentials.
-
-### Prerequisites
-
-1. **Set the RPC URL**
-
-   Configure your target network's RPC endpoint using the proper `RPC_URL_<network>` environment variable. You can set this in your shell or create a `.env` file (see `.env.example` for reference):
-
-   ```env
-   RPC_URL_SEPOLIA=https://your-network-rpc-url
-   ```
-
-   **Note:** If RPC URL is not provided, system will use default public RPC URL from that network
-
-2. **Set the Private Key**
-
-   For real deployments, you must provide your own wallet's private key. Set the `PRIVATE_KEY_<network>` environment variable:
-
-   ```env
-   PRIVATE_KEY_SEPOLIA=your_private_key_here
-   ```
-
-   **Security Note:** A development key is used by default when running the Nitro dev node locally, but for external deployments, you must provide your own private key.
-
-3. **Set the Account Address**
-
-   Set the `ACCOUNT_ADDRESS_<network>`
-
-   ```env
-   ACCOUNT_ADDRESS_SEPOLIA=your_account_address_here
-   ```
-
-4. **Update Frontend Configuration**
-
-   Open `packages/nextjs/scaffold.config.ts` and update the `targetNetworks` array to include your target chain. This ensures your frontend connects to the correct network and generates the proper ABI in `deployedContracts.ts`:
-
-   ```ts
-   import * as chains from "./utils/scaffold-stylus/supportedChains";
-   // ...
-   targetNetworks: [chains.arbitrumSepolia],
-   ```
-
-### Arbitrum Testnet Faucets (Optional)
-
-For Arbitrum testnets, you may need testnet ETH to deploy contracts. You can obtain testnet tokens from these faucets:
-
-- [Chainlink Faucet](https://faucets.chain.link/arbitrum-sepolia)
-- [QuickNode Faucet](https://faucet.quicknode.com/arbitrum/sepolia)
-- [Alchemy Faucet](https://sepoliafaucet.com/)
-
-### Available Networks
-
-This template supports Arbitrum networks only. You can test which networks are available and their RPC URLs:
-
-```bash
-yarn info:networks
-```
-
-This will show you all supported networks and their corresponding RPC endpoints.
-
-### Deploy to Other Network (Non-Orbit Chains)
-
-Once configured, deploy to your target network:
-
-```bash
-yarn deploy --network <network>
-```
-
-**Important Security Notes:**
-
-- The values in `.env.example` provide a template for required environment variables
-- **Always keep your private key secure and never commit it to version control**
-- Consider using environment variable management tools for production deployments
-
-### Deploy to Orbit Chains
-
-Visit our [Deploy to Orbit chain documentation](https://arb-stylus.github.io/scaffold-stylus-docs/deploying/deploy-to-orbit-chains) for detailed guide
-
-## Verify your contract (Highly Experimental)
-
-Visit our [Verify section](https://arb-stylus.github.io/scaffold-stylus-docs/recipes/verify-contract-custom-chain)
-
-## 🛠️ Troubleshooting Common Issues
-
-Visit our [Troubleshooting section](https://arb-stylus.github.io/scaffold-stylus-docs/quick-start/troubleshooting)
+**Live on Arbitrum Sepolia**
+Contract: [`0x28ce2c3d820f7d62ca1f25300d884a69ffb4967b`](https://sepolia.arbiscan.io/address/0x28ce2c3d820f7d62ca1f25300d884a69ffb4967b)
+Network: Arbitrum Sepolia (chain 421614)
 
 ---
 
-## Documentation
+## The problem
 
-Visit our [docs](https://arb-stylus.github.io/scaffold-stylus-docs/) to learn how to start building with Scaffold-Stylus.
+Escrow is one of the oldest trust problems in commerce. A client pays for work; a worker delivers it. When they disagree — "this isn't what we agreed" — someone neutral has to decide who gets the money. Today that neutral party is a company: a marketplace, a bank, a payment processor. You have to trust that company to hold your funds and to rule fairly, and their decision arrives through a support ticket you cannot audit.
 
-To learn more about its features, check out our [website](https://scaffoldstylus.quantum3labs.com/).
+Freelance and marketplace disputes are a massive, unglamorous, unsolved pain. The arbitration is slow, opaque, and biased toward whoever the platform would rather keep.
 
-## Contributing to Scaffold-Stylus
+## The answer
 
-We welcome contributions to Scaffold-Stylus!
+VERDICT replaces the trusted company with two things that cannot be biased: a smart contract that holds the funds, and an AI arbitrator whose ruling is enforced by code rather than a human's discretion.
 
-Please see [CONTRIBUTING.md](https://github.com/Arb-Stylus/scaffold-stylus/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-Stylus.
+1. **Lock** — the client opens an escrow, naming the worker's address and the agreed terms, and locks the payment. `createEscrow(worker, termsHash)` — payable.
+2. **Dispute** — if the work is contested, either party escalates to arbitration. `requestResolution(id)`.
+3. **Rule** — the AI reads the terms and both sides' evidence and returns a fair split in basis points, with written reasoning. The ruling is posted on-chain. `submitRuling(id, workerBps, rulingRef)`.
+4. **Settle** — the contract computes the split and releases the funds to both parties. `settle(id)`.
+
+## Why this has to be on-chain
+
+This is the question the Arbitrum track asks every project to answer, and VERDICT's answer is structural, not decorative.
+
+An escrow's entire value is that a neutral party both sides trust holds the money. If that party is a company, you are back to trusting the company. Putting the escrow in a smart contract removes the company: the funds are held and released by code that neither party controls and everyone can read. The AI's ruling is recorded permanently and publicly; it cannot be edited, deleted, or quietly overridden. Remove the blockchain and VERDICT is just another company asking you to trust it. The chain *is* the neutrality.
+
+## Why Arbitrum Stylus
+
+The settlement is real computation, and it runs inside the contract. Stylus lets us write the contract in Rust and run the split math — validating the ruling against the locked amount, computing each party's cut, guarding against re-entrancy — cheaply and verifiably on-chain, where in the EVM it would be clumsy and expensive. The contract is deployed and activated on Arbitrum Sepolia via `cargo stylus`.
+
+## Why the AI is essential, not decorative
+
+The AI *is* the arbitrator. Without it there is no ruling and no product — just a pot of locked funds with no way to resolve a disagreement. It performs genuine analysis: it reads the agreed terms and each party's evidence and produces a structured, defensible judgment (a basis-point split plus written reasoning). The reasoning is shown in full so the ruling is auditable rather than a black box.
+
+Crucially, the AI can only *rule*. It sets a split between the two real parties; it can never redirect funds to itself or a third party. Even a compromised arbitrator can only mis-split between the client and the worker — it can never steal. That boundary is enforced by the contract, not by trust.
+
+## How it works
+
+```
+Client                Contract (Stylus/Rust)           AI Arbitrator
+  |                          |                                |
+  |-- createEscrow() ------->| funds locked                   |
+  |   (+ terms, worker)      |                                |
+  |                          |                                |
+Worker                       |                                |
+  |-- requestResolution() -->| state: disputed                |
+  |                          |                                |
+  |   evidence submitted ------------------------------------>| reads terms
+  |                          |                                | + evidence,
+  |                          |<-- submitRuling(workerBps) ----| returns split
+  |                          |   ruling recorded on-chain     | + reasoning
+  |                          |                                |
+  |-- settle() ------------->| computes split,                |
+  |                          | releases funds to both,        |
+  |                          | state: settled (immutable)     |
+```
+
+## Tech
+
+- **Smart contract:** Rust, Arbitrum Stylus SDK, deployed via `cargo stylus`. Registry pattern — one contract holds many escrows keyed by id. On-chain settlement math, re-entrancy-safe (checks-effects-interactions), typed errors.
+- **AI arbitrator:** server-side API route calling an LLM with a structured-output schema, so every ruling returns machine-readable `{ workerBps, reasoning }`.
+- **Frontend:** Next.js + Scaffold-Stylus, wagmi/viem, a courtroom-docket interface reading live contract state. Role-aware: the same case shows differently to the client, the worker, and an observer.
+- **Chain:** Arbitrum Sepolia (421614).
+
+## Contract addresses
+
+| Item | Value |
+|---|---|
+| Contract | `0x28ce2c3d820f7d62ca1f25300d884a69ffb4967b` |
+| Network | Arbitrum Sepolia (421614) |
+| Explorer | https://sepolia.arbiscan.io/address/0x28ce2c3d820f7d62ca1f25300d884a69ffb4967b |
+
+## Run locally
+
+```bash
+# 1. install
+yarn install
+git submodule update --init --recursive
+
+# 2. local chain (terminal 1)
+yarn chain
+
+# 3. deploy the Stylus contract (terminal 2)
+yarn deploy
+
+# 4. frontend (terminal 3)
+yarn start   # http://localhost:3000
+```
+
+For the AI arbitrator, set an LLM API key in `packages/nextjs/.env.local` (see `.env.example`).
+To deploy to Arbitrum Sepolia, set `PRIVATE_KEY_SEPOLIA` and `ACCOUNT_ADDRESS_SEPOLIA` in `packages/stylus/.env`, then `yarn deploy --network sepolia`.
+
+## Honest notes
+
+The arbitrator's ruling is produced by an LLM and shown with its full reasoning so it can be audited; it is a decision aid enforced by the contract, not an infallible oracle. The demo runs on Arbitrum Sepolia testnet. Work delivery happens off-platform — VERDICT holds the funds and resolves the dispute; it is not where the work itself is uploaded.
