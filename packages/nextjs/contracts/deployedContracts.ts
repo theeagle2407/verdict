@@ -201,6 +201,202 @@ const deployedContracts = {
       ],
     },
   },
+  "421614": {
+    "your-contract": {
+      address: "0x28ce2c3d820f7d62ca1f25300d884a69ffb4967b",
+      txHash: "0xf117159f4b878cec11f9894a45b99e437cbe6592377f7dfa1e7acfe2ab65d729",
+      abi: [
+        {
+          inputs: [],
+          name: "AlreadyInit",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "BadState",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "BpsOutOfRange",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "NotParty",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "NotResolver",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "SelfDeal",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "TransferFailed",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "ZeroAmount",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "ZeroWorker",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "worker",
+              type: "address",
+            },
+            {
+              internalType: "bytes32",
+              name: "terms_hash",
+              type: "bytes32",
+            },
+          ],
+          name: "createEscrow",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "payable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "id",
+              type: "uint256",
+            },
+          ],
+          name: "getEscrow",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "getResolver",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "id",
+              type: "uint256",
+            },
+          ],
+          name: "requestResolution",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "id",
+              type: "uint256",
+            },
+          ],
+          name: "settle",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "id",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "worker_bps",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes32",
+              name: "ruling_ref",
+              type: "bytes32",
+            },
+          ],
+          name: "submitRuling",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "totalEscrows",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+      ],
+    },
+  },
 } as const;
 
 export default deployedContracts satisfies GenericContractsDeclaration;
