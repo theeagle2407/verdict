@@ -1,168 +1,259 @@
 //!
-//! YourContract in Stylus Rust.
+//! VERDICT — AI-refereed escrow on Arbitrum Stylus.
 //!
-//! A smart contract that allows changing a state variable of the contract and tracking the changes.
-//! It also allows the owner to withdraw the Ether in the contract.
+//! Two parties lock funds against agreed terms. When they disagree, either
+//! party escalates to AI resolution; a designated resolver posts a split, and
+//! the contract computes the settlement on-chain and pays both parties.
 //!
-//! This is the Stylus Rust equivalent of the Solidity YourContract.
+//! Trust model: the resolver can ONLY set a split (worker's share in basis
+//! points) between the two real parties. It can never redirect funds to
+//! itself or a third party. Settlement math is fixed and on-chain.
 //!
 
-// Allow `cargo stylus export-abi` to generate a main function.
 #![cfg_attr(not(any(test, feature = "export-abi")), no_main)]
 #![cfg_attr(not(any(test, feature = "export-abi")), no_std)]
 
 #[macro_use]
 extern crate alloc;
 
-use alloc::string::String;
 use alloc::vec::Vec;
 
-/// Import items from the SDK. The prelude contains common traits and macros.
 use stylus_sdk::{
-    alloy_primitives::{Address, U256},
+    alloy_primitives::{Address, B256, U256},
     alloy_sol_types::sol,
     prelude::*,
     stylus_core::log,
 };
 
-/// Import OpenZeppelin Ownable functionality
-use openzeppelin_stylus::access::ownable::{self, IOwnable, Ownable};
+// Lifecycle states, as U256 to match uint256 storage.
+fn st_funded() -> U256 { U256::from(1) }
+fn st_disputed() -> U256 { U256::from(2) }
+fn st_ruled() -> U256 { U256::from(3) }
+fn st_settled() -> U256 { U256::from(4) }
 
-/// Error types for the contract
-#[derive(SolidityError, Debug)]
-pub enum Error {
-    UnauthorizedAccount(ownable::OwnableUnauthorizedAccount),
-    InvalidOwner(ownable::OwnableInvalidOwner),
-}
-
-impl From<ownable::Error> for Error {
-    fn from(value: ownable::Error) -> Self {
-        match value {
-            ownable::Error::UnauthorizedAccount(e) => Error::UnauthorizedAccount(e),
-            ownable::Error::InvalidOwner(e) => Error::InvalidOwner(e),
-        }
-    }
-}
-
-// Define the GreetingChange event
+// Events for the frontend / judges to watch.
 sol! {
-    event GreetingChange(address indexed greetingSetter, string newGreeting, bool premium, uint256 value);
+    event EscrowCreated(uint256 indexed id, address indexed client, address indexed worker, uint256 amount);
+    event ResolutionRequested(uint256 indexed id, address indexed requester);
+    event RulingSubmitted(uint256 indexed id, uint256 workerBps, bytes32 rulingRef);
+    event Settled(uint256 indexed id, uint256 workerCut, uint256 clientCut);
 }
 
-// Define persistent storage using the Solidity ABI.
-// `YourContract` will be the entrypoint.
+#[derive(SolidityError)]
+pub enum Error {
+    ZeroAmount(ZeroAmount),
+    ZeroWorker(ZeroWorker),
+    SelfDeal(SelfDeal),
+    NotParty(NotParty),
+    NotResolver(NotResolver),
+    BadState(BadState),
+    BpsOutOfRange(BpsOutOfRange),
+    AlreadyInit(AlreadyInit),
+    TransferFailed(TransferFailed),
+}
+
+sol! {
+    error ZeroAmount();
+    error ZeroWorker();
+    error SelfDeal();
+    error NotParty();
+    error NotResolver();
+    error BadState();
+    error BpsOutOfRange();
+    error AlreadyInit();
+    error TransferFailed();
+}
+
 sol_storage! {
     #[entrypoint]
-    pub struct YourContract {
-        Ownable ownable;
-        string greeting;
-        bool premium;
-        uint256 total_counter;
-        mapping(address => uint256) user_greeting_counter;
+    pub struct Verdict {
+        address resolver;
+        uint256 next_id;
+        mapping(uint256 => address) client;
+        mapping(uint256 => address) worker;
+        mapping(uint256 => uint256) amount;
+        mapping(uint256 => uint256) state;
+        mapping(uint256 => bytes32) terms_hash;
+        mapping(uint256 => uint256) requested_by; // 0 none, 1 client, 2 worker
+        mapping(uint256 => uint256) worker_bps;
+        mapping(uint256 => bytes32) ruling_ref;
     }
 }
 
-/// Declare that `YourContract` is a contract with the following external methods.
 #[public]
-#[implements(IOwnable)]
-impl YourContract {
+impl Verdict {
     #[constructor]
-    pub fn constructor(&mut self, initial_owner: Address) -> Result<(), Error> {
-        // Initialize Ownable with the initial owner using OpenZeppelin pattern
-        self.ownable.constructor(initial_owner)?;
-        self.greeting.set_str("Building Unstoppable Apps!!!");
+    pub fn constructor(&mut self, resolver: Address) -> Result<(), Error> {
+        if self.resolver.get() != Address::ZERO {
+            return Err(Error::AlreadyInit(AlreadyInit {}));
+        }
+        if resolver == Address::ZERO {
+            return Err(Error::ZeroWorker(ZeroWorker {}));
+        }
+        self.resolver.set(resolver);
         Ok(())
     }
 
-    /// Gets the current greeting
-    pub fn greeting(&self) -> String {
-        self.greeting.get_string()
-    }
-
-    /// Gets the premium status
-    pub fn premium(&self) -> bool {
-        self.premium.get()
-    }
-
-    /// Gets the total counter
-    pub fn total_counter(&self) -> U256 {
-        self.total_counter.get()
-    }
-
-    /// Gets the user greeting counter for a specific address
-    pub fn user_greeting_counter(&self, user: Address) -> U256 {
-        self.user_greeting_counter.get(user)
-    }
-
-    /// Function that allows anyone to change the state variable "greeting" of the contract and increase the counters
+    /// Client opens an escrow, locking msg_value against a worker + terms.
     #[payable]
-    pub fn set_greeting(&mut self, new_greeting: String) {
-        // Change state variables
-        self.greeting.set_str(&new_greeting);
-
-        // Increment counters
-        let current_total = self.total_counter.get();
-        self.total_counter.set(current_total + U256::from(1));
-
-        let sender: Address = self.vm().msg_sender();
-        let current_user_count = self.user_greeting_counter.get(sender);
-        self.user_greeting_counter
-            .insert(sender, current_user_count + U256::from(1));
-
-        // Set premium based on msg.value
-        let msg_value = self.vm().msg_value();
-        let is_premium = msg_value > U256::ZERO;
-        self.premium.set(is_premium);
-
-        // Emit the event
-        log(
-            self.vm(),
-            GreetingChange {
-                greetingSetter: sender,
-                newGreeting: new_greeting,
-                premium: is_premium,
-                value: msg_value,
-            },
-        );
-    }
-
-    /// Function that allows the owner to withdraw all the Ether in the contract
-    /// The function can only be called by the owner of the contract
-    pub fn withdraw(&mut self) -> Result<(), Error> {
-        // Check if caller is owner using OpenZeppelin's only_owner
-        self.ownable.only_owner()?;
-
-        // Get contract balance and transfer to owner using transfer_eth
-        let balance = self.vm().balance(self.vm().contract_address());
-        if balance > U256::ZERO {
-            let owner = self.ownable.owner();
-            let _ = self.vm().transfer_eth(owner, balance);
+    pub fn create_escrow(
+        &mut self,
+        worker: Address,
+        terms_hash: B256,
+    ) -> Result<U256, Error> {
+        let value = self.vm().msg_value();
+        if value == U256::ZERO {
+            return Err(Error::ZeroAmount(ZeroAmount {}));
+        }
+        if worker == Address::ZERO {
+            return Err(Error::ZeroWorker(ZeroWorker {}));
+        }
+        let sender = self.vm().msg_sender();
+        if worker == sender {
+            return Err(Error::SelfDeal(SelfDeal {}));
         }
 
+        let id = self.next_id.get();
+        self.next_id.set(id + U256::from(1));
+
+        self.client.insert(id, sender);
+        self.worker.insert(id, worker);
+        self.amount.insert(id, value);
+        self.state.insert(id, st_funded());
+        self.terms_hash.insert(id, terms_hash);
+        self.requested_by.insert(id, U256::ZERO);
+
+        log(
+            self.vm(),
+            EscrowCreated {
+                id,
+                client: sender,
+                worker,
+                amount: value,
+            },
+        );
+        Ok(id)
+    }
+
+    /// Either party escalates to AI resolution. Records who asked.
+    pub fn request_resolution(&mut self, id: U256) -> Result<(), Error> {
+        if self.state.get(id) != st_funded() {
+            return Err(Error::BadState(BadState {}));
+        }
+        let sender = self.vm().msg_sender();
+        let who = if sender == self.client.get(id) {
+            U256::from(1)
+        } else if sender == self.worker.get(id) {
+            U256::from(2)
+        } else {
+            return Err(Error::NotParty(NotParty {}));
+        };
+        self.state.insert(id, st_disputed());
+        self.requested_by.insert(id, who);
+
+        log(
+            self.vm(),
+            ResolutionRequested {
+                id,
+                requester: sender,
+            },
+        );
         Ok(())
     }
 
-    /// Allow contract to receive ETH (equivalent to receive() function)
-    #[payable]
-    pub fn receive_ether(&self) {
-        // This function allows the contract to receive ETH
-        // The #[payable] attribute allows it to accept value
-    }
-}
+    /// Resolver posts the AI ruling: worker share in basis points (0..=10000).
+    pub fn submit_ruling(
+        &mut self,
+        id: U256,
+        worker_bps: U256,
+        ruling_ref: B256,
+    ) -> Result<(), Error> {
+        if self.vm().msg_sender() != self.resolver.get() {
+            return Err(Error::NotResolver(NotResolver {}));
+        }
+        if self.state.get(id) != st_disputed() {
+            return Err(Error::BadState(BadState {}));
+        }
+        if worker_bps > U256::from(10000) {
+            return Err(Error::BpsOutOfRange(BpsOutOfRange {}));
+        }
+        self.worker_bps.insert(id, worker_bps);
+        self.ruling_ref.insert(id, ruling_ref);
+        self.state.insert(id, st_ruled());
 
-/// Implementation of the IOwnable interface
-#[public]
-impl IOwnable for YourContract {
-    fn owner(&self) -> Address {
-        self.ownable.owner()
+        log(
+            self.vm(),
+            RulingSubmitted {
+                id,
+                workerBps: worker_bps,
+                rulingRef: ruling_ref,
+            },
+        );
+        Ok(())
     }
 
-    fn transfer_ownership(&mut self, new_owner: Address) -> Result<(), Vec<u8>> {
-        Ok(self.ownable.transfer_ownership(new_owner)?)
+    /// Anyone can trigger settlement once a ruling exists.
+    /// On-chain settlement math: split the locked amount by basis points.
+    pub fn settle(&mut self, id: U256) -> Result<(), Error> {
+        if self.state.get(id) != st_ruled() {
+            return Err(Error::BadState(BadState {}));
+        }
+        let bps = self.worker_bps.get(id);
+        let total = self.amount.get(id);
+        let worker_cut = total * bps / U256::from(10000);
+        let client_cut = total - worker_cut;
+
+        let worker_addr = self.worker.get(id);
+        let client_addr = self.client.get(id);
+
+        // Checks-effects-interactions: mark settled before transfers.
+        self.state.insert(id, st_settled());
+        self.amount.insert(id, U256::ZERO);
+
+        if worker_cut > U256::ZERO {
+            self.vm()
+                .transfer_eth(worker_addr, worker_cut)
+                .map_err(|_| Error::TransferFailed(TransferFailed {}))?;
+        }
+        if client_cut > U256::ZERO {
+            self.vm()
+                .transfer_eth(client_addr, client_cut)
+                .map_err(|_| Error::TransferFailed(TransferFailed {}))?;
+        }
+
+        log(
+            self.vm(),
+            Settled {
+                id,
+                workerCut: worker_cut,
+                clientCut: client_cut,
+            },
+        );
+        Ok(())
     }
 
-    fn renounce_ownership(&mut self) -> Result<(), Vec<u8>> {
-        Ok(self.ownable.renounce_ownership()?)
+    // ---- views ----
+
+    pub fn get_resolver(&self) -> Address {
+        self.resolver.get()
+    }
+
+    pub fn total_escrows(&self) -> U256 {
+        self.next_id.get()
+    }
+
+    pub fn get_escrow(
+        &self,
+        id: U256,
+    ) -> (Address, Address, U256, U256, U256, U256) {
+        (
+            self.client.get(id),
+            self.worker.get(id),
+            self.amount.get(id),
+            self.state.get(id),
+            self.requested_by.get(id),
+            self.worker_bps.get(id),
+        )
     }
 }
 
@@ -171,41 +262,30 @@ mod test {
     use super::*;
     use stylus_sdk::testing::*;
 
-    #[no_mangle]
-    pub unsafe extern "C" fn emit_log(_pointer: *const u8, _len: usize, _: usize) {}
-    #[no_mangle]
-    pub unsafe extern "C" fn msg_sender(_sender: *mut u8) {}
-
     #[test]
-    fn test_your_contract() {
+    fn test_escrow_lifecycle() {
         let vm = TestVM::default();
-        let mut contract = YourContract::from(&vm);
+        let mut c = Verdict::from(&vm);
 
-        // Test initialization
-        let owner_addr = Address::from([1u8; 20]);
-        let _ = contract.constructor(owner_addr);
+        let resolver = Address::from([9u8; 20]);
+        let _ = c.constructor(resolver);
+        assert_eq!(c.get_resolver(), resolver);
 
-        assert_eq!(contract.owner(), owner_addr);
-        assert_eq!(contract.greeting(), "Building Unstoppable Apps!!!");
-        assert_eq!(contract.premium(), false);
-        assert_eq!(contract.total_counter(), U256::ZERO);
+        let worker = Address::from([2u8; 20]);
+        vm.set_value(U256::from(1000));
+        let id = c.create_escrow(worker, B256::ZERO).unwrap();
+        assert_eq!(id, U256::ZERO);
+        assert_eq!(c.total_escrows(), U256::from(1));
 
-        // Test setting greeting without payment
-        contract.set_greeting("Hello World".to_string());
-        assert_eq!(contract.greeting(), "Hello World");
-        assert_eq!(contract.premium(), false);
-        assert_eq!(contract.total_counter(), U256::from(1));
+        let _ = c.request_resolution(id);
 
-        // Test user greeting counter
-        let sender = vm.msg_sender();
-        assert_eq!(contract.user_greeting_counter(sender), U256::from(1));
+        vm.set_sender(resolver);
+        let _ = c.submit_ruling(id, U256::from(7000), B256::ZERO);
 
-        // Test setting greeting with payment
-        vm.set_value(U256::from(100));
-        contract.set_greeting("Premium Hello".to_string());
-        assert_eq!(contract.greeting(), "Premium Hello");
-        assert_eq!(contract.premium(), true);
-        assert_eq!(contract.total_counter(), U256::from(2));
-        assert_eq!(contract.user_greeting_counter(sender), U256::from(2));
+        let _ = c.settle(id);
+        let (_, _, amount, state, _, bps) = c.get_escrow(id);
+        assert_eq!(state, U256::from(4));
+        assert_eq!(bps, U256::from(7000));
+        assert_eq!(amount, U256::ZERO);
     }
 }
