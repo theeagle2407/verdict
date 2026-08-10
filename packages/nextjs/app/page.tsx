@@ -1,93 +1,97 @@
 "use client";
 
+import { useState } from "react";
 import type { NextPage } from "next";
-import { useTheme } from "next-themes";
 import { useAccount } from "wagmi";
-import { Card } from "~~/components/Card";
-import { Address } from "~~/components/scaffold-eth";
-import CompassIcon from "~~/icons/CompassIcon";
-import DarkBugAntIcon from "~~/icons/DarkBugAntIcon";
-import LightBugAntIcon from "~~/icons/LightBugAntIcon";
+import { RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
+import { useScaffoldReadContract } from "~~/hooks/scaffold-eth/useScaffoldReadContract";
+import { CreateCase } from "~~/components/verdict/CreateCase";
+import { CaseList } from "~~/components/verdict/CaseList";
+import { CaseView } from "~~/components/verdict/CaseView";
+import "~~/styles/verdict.css";
 
 const Home: NextPage = () => {
-  const { address: connectedAddress } = useAccount();
-  const { resolvedTheme } = useTheme();
-  const isDarkMode = resolvedTheme === "dark";
+  const { address } = useAccount();
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const { data: totalEscrows } = useScaffoldReadContract({
+    contractName: "your-contract",
+    functionName: "totalEscrows",
+  });
+
+  const { data: resolver } = useScaffoldReadContract({
+    contractName: "your-contract",
+    functionName: "getResolver",
+  });
+
+  const total = totalEscrows ? Number(totalEscrows) : 0;
 
   return (
-    <>
-      <div className="flex items-center flex-col justify-between flex-grow pt-10">
-        <div className="flex flex-col justify-center flex-grow">
-          <div className="px-5">
-            <h1 className="text-center">
-              <span className="block text-2xl mb-2">Welcome to</span>
-              <span className="block text-4xl font-bold">Scaffold-Stylus</span>
-            </h1>
-            <div className="flex justify-center items-center space-x-2 my-4">
-              <p className={`my-2 font-medium ${!isDarkMode ? "text-[#E3066E]" : ""}`}>Connected Address:</p>
-              <Address address={connectedAddress} />
-            </div>
-            <p className="text-center text-lg">
-              Get started by editing{" "}
-              <code
-                className="italic bg-base-300 text-black text-base font-bold max-w-full break-words break-all inline-block"
-                style={{
-                  backgroundColor: isDarkMode ? "white" : "#F0F0F0",
-                }}
-              >
-                packages/nextjs/app/page.tsx
-              </code>
-            </p>
-            <p className="text-center text-lg">
-              Edit your smart contract{" "}
-              <code
-                className="italic bg-base-300 text-black text-base font-bold max-w-full break-words break-all inline-block"
-                style={{
-                  backgroundColor: isDarkMode ? "white" : "#F0F0F0",
-                }}
-              >
-                lib.rs
-              </code>{" "}
-              in{" "}
-              <code
-                className="italic bg-base-300 text-black text-base font-bold max-w-full break-words break-all inline-block"
-                style={{
-                  backgroundColor: isDarkMode ? "white" : "#F0F0F0",
-                }}
-              >
-                packages/stylus/contracts/your-contract/src
-              </code>
-            </p>
-          </div>
+    <div className="verdict-root">
+      <div className="v-topbar">
+        <div className="v-brand">
+          <span className="v-wordmark">
+            VERDICT<span className="dot">.</span>
+          </span>
+          <span className="v-tagline">AI-refereed escrow · Arbitrum Stylus</span>
         </div>
-
-        <div
-          className="h-auto sm:h-[306px] mb-3 w-full py-11"
-          style={{
-            backgroundColor: isDarkMode ? "#050505" : "white",
-          }}
-        >
-          <div className="flex justify-center items-center h-full gap-12 flex-col sm:flex-row">
-            {/* Debug Contracts Card */}
-            <Card
-              icon={isDarkMode ? <DarkBugAntIcon /> : <LightBugAntIcon />}
-              description={<>Tinker with your smart contract using the</>}
-              linkHref="/debug"
-              linkText="Debug Contracts"
-              isDarkMode={isDarkMode}
-            />
-            {/* Block Explorer Card */}
-            <Card
-              icon={<CompassIcon />}
-              description={<>Explore your local transactions with the</>}
-              linkHref="/blockexplorer"
-              linkText="Block Explorer"
-              isDarkMode={isDarkMode}
-            />
+        <div className="v-topmeta">
+          <div className="v-meta-block">
+            <div className="v-meta-label">Arbitrator</div>
+            <div className="v-meta-value">{resolver ? `${resolver.slice(0, 6)}…${resolver.slice(-4)}` : "—"}</div>
+          </div>
+          <div className="v-divider" />
+          <div className="v-wallet-slot">
+            <RainbowKitCustomConnectButton />
           </div>
         </div>
       </div>
-    </>
+
+      <div className="v-shell">
+        <aside className="v-rail">
+          <div className="v-rail-head">
+            <div className="v-rail-title">The Docket</div>
+            <div className="v-rail-count">
+              {total} case{total === 1 ? "" : "s"} on record
+            </div>
+          </div>
+          <CaseList
+            total={total}
+            selectedId={selectedId}
+            onSelect={id => {
+              setSelectedId(id);
+              setCreating(false);
+            }}
+          />
+          <div style={{ padding: "16px 22px", borderTop: "1px solid var(--line)", marginTop: "auto" }}>
+            <button
+              className="v-btn oxblood"
+              style={{ width: "100%" }}
+              onClick={() => {
+                setCreating(true);
+                setSelectedId(null);
+              }}
+            >
+              File new case
+            </button>
+          </div>
+        </aside>
+
+        <main className="v-main">
+          {creating ? (
+            <CreateCase onCreated={() => setCreating(false)} />
+          ) : selectedId !== null ? (
+            <CaseView id={selectedId} connected={address} />
+          ) : (
+            <div className="v-empty">
+              <div className="v-empty-title">No case selected</div>
+              <div>Select a case from the docket, or file a new one to lock funds in escrow.</div>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
   );
 };
 

@@ -1,0 +1,333 @@
+/* VERDICT — courtroom docket design system.
+   Aesthetic: ink on aged paper, oxblood legal accent, monospace for all
+   on-chain data so machine-truth is typeset differently from human text. */
+
+:root {
+  --paper: #EDE8DC;
+  --paper-deep: #E3DCCB;
+  --ink: #1A1714;
+  --ink-soft: #4A4239;
+  --ink-faint: #8A7F6E;
+  --oxblood: #6B2020;
+  --oxblood-bright: #9B2226;
+  --brass: #8A6D3B;
+  --line: #C9BFA8;
+  --paper-panel: #F3EEE3;
+}
+
+* { box-sizing: border-box; }
+
+.verdict-root {
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.v-mono {
+  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.v-eyebrow {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--oxblood);
+}
+
+/* ---- top bar ---- */
+.v-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  border-bottom: 1.5px solid var(--ink);
+  background: var(--paper);
+}
+.v-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.v-wordmark {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+.v-wordmark .dot { color: var(--oxblood); }
+.v-tagline {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.v-topmeta {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.v-meta-block { text-align: right; }
+.v-meta-label {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.v-meta-value {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink);
+  margin-top: 2px;
+}
+
+/* ---- shell layout ---- */
+.v-shell {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  min-height: calc(100vh - 61px);
+}
+.v-rail {
+  border-right: 1.5px solid var(--ink);
+  background: var(--paper-deep);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.v-rail-head {
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.v-rail-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.v-rail-count {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-top: 4px;
+}
+.v-main {
+  padding: 32px 40px;
+  overflow-y: auto;
+}
+
+/* ---- case list items ---- */
+.v-case {
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.v-case:hover { background: var(--paper-panel); }
+.v-case.active {
+  background: var(--paper);
+  border-left: 3px solid var(--oxblood);
+  padding-left: 19px;
+}
+.v-case-id {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: var(--oxblood);
+  font-weight: 600;
+}
+.v-case-parties {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+.v-case-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.v-amount {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ---- state badges ---- */
+.v-badge {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+}
+.v-badge.funded { color: var(--brass); }
+.v-badge.disputed { color: var(--oxblood-bright); }
+.v-badge.ruled { color: var(--ink); }
+.v-badge.settled { color: var(--ink-faint); }
+
+/* ---- panels ---- */
+.v-panel {
+  background: var(--paper-panel);
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  padding: 24px 26px;
+  margin-bottom: 20px;
+}
+.v-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.v-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 0;
+  font-size: 14px;
+}
+.v-row .k { color: var(--ink-soft); }
+.v-row .val { font-family: "SF Mono", Menlo, monospace; font-size: 13px; }
+
+/* ---- buttons ---- */
+.v-btn {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 12px 22px;
+  border: 1.5px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: opacity 0.12s;
+}
+.v-btn:hover { opacity: 0.85; }
+.v-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.v-btn.oxblood { background: var(--oxblood); border-color: var(--oxblood); }
+.v-btn.ghost { background: transparent; color: var(--ink); }
+
+/* ---- inputs ---- */
+.v-input, .v-textarea {
+  width: 100%;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  padding: 11px 13px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 2px;
+  margin-top: 6px;
+}
+.v-input:focus, .v-textarea:focus { outline: none; border-color: var(--oxblood); }
+.v-textarea { min-height: 90px; resize: vertical; line-height: 1.5; }
+.v-field-label {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.v-field { margin-bottom: 18px; }
+
+/* ---- ruling block ---- */
+.v-ruling {
+  background: var(--paper);
+  border: 1.5px solid var(--oxblood);
+  border-radius: 3px;
+  padding: 22px 24px;
+  margin-top: 16px;
+}
+.v-ruling-split {
+  display: flex;
+  gap: 24px;
+  margin: 16px 0;
+}
+.v-split-cell { flex: 1; text-align: center; padding: 14px; border: 1px solid var(--line); border-radius: 2px; }
+.v-split-pct { font-family: "SF Mono", Menlo, monospace; font-size: 30px; font-weight: 700; }
+.v-split-lbl { font-family: "SF Mono", Menlo, monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 4px; }
+.v-reasoning { font-size: 14px; line-height: 1.65; color: var(--ink-soft); font-style: italic; }
+
+.v-empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--ink-faint);
+}
+.v-empty-title { font-size: 20px; color: var(--ink); margin-bottom: 8px; }
+
+.v-link {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: var(--oxblood);
+  text-decoration: underline;
+}
+/* ---- top bar (refined) ---- */
+.v-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  border-bottom: 1.5px solid var(--ink);
+  background: var(--paper);
+  min-height: 78px;
+}
+.v-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.v-wordmark {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  line-height: 1;
+}
+.v-wordmark .dot { color: var(--oxblood); }
+.v-tagline {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.v-topmeta {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.v-meta-block { text-align: right; line-height: 1.3; }
+.v-meta-label {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.v-meta-value {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  color: var(--ink);
+  margin-top: 3px;
+}
+.v-divider {
+  width: 1px;
+  height: 34px;
+  background: var(--line);
+}
+/* tame the scaffold connect button so it fits the ledger aesthetic */
+.v-wallet-slot { display: flex; align-items: center; }
+.v-wallet-slot button {
+  font-family: "SF Mono", Menlo, monospace !important;
+  font-size: 12px !important;
+}
