@@ -100,3 +100,21 @@ To deploy to Arbitrum Sepolia, set `PRIVATE_KEY_SEPOLIA` and `ACCOUNT_ADDRESS_SE
 ## Honest notes
 
 The arbitrator's ruling is produced by an LLM and shown with its full reasoning so it can be audited; it is a decision aid enforced by the contract, not an infallible oracle. The demo runs on Arbitrum Sepolia testnet. Work delivery happens off-platform — VERDICT holds the funds and resolves the dispute; it is not where the work itself is uploaded.
+
+## Built with / third-party tools
+
+VERDICT is built on open-source frameworks, SDKs, and APIs. Their use is credited below in line with the hackathon rules.
+
+| Tool | Role in VERDICT | License |
+|---|---|---|
+| [Scaffold-Stylus](https://github.com/Arb-Stylus/scaffold-stylus) | Project scaffold and Arbitrum dev stack (local Nitro node, deploy tooling, frontend base) | MIT |
+| [Arbitrum Stylus SDK (Rust)](https://github.com/OffchainLabs/stylus-sdk-rs) | The VERDICT smart contract — storage, escrow lifecycle, on-chain settlement math | Apache-2.0 / MIT |
+| [`cargo stylus`](https://github.com/OffchainLabs/cargo-stylus) | Compiling, checking, and deploying the Stylus contract to Arbitrum | Apache-2.0 / MIT |
+| [Google Gemini API](https://ai.google.dev/) | The AI arbitrator — reads terms and evidence, returns a structured ruling with reasoning | Commercial API (used under Google's terms) |
+| [Next.js](https://nextjs.org/) | Frontend framework and the server-side arbitrator API route | MIT |
+| [wagmi](https://wagmi.sh/) + [viem](https://viem.sh/) | Wallet connection, contract reads/writes, and transaction handling | MIT |
+| [RainbowKit](https://www.rainbowkit.com/) | Wallet connect UI | MIT |
+| [TypeScript](https://www.typescriptlang.org/) | Frontend and API route language | Apache-2.0 |
+| [Vercel](https://vercel.com/) | Hosting for the frontend and the arbitrator serverless function | — |
+
+All third-party tools are used as support libraries and infrastructure. The core smart contract, the AI arbitration logic and prompt, the settlement design, and the application itself were built during the hackathon.
