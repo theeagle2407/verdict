@@ -21,8 +21,8 @@ const baseUrl = process.env.VERCEL_URL
   : `http://localhost:${process.env.PORT || 3000}`;
 const imageUrl = `${baseUrl}/thumbnail.jpg`;
 
-const title = "Create Stylus Dapp";
-const titleTemplate = "%s | Create Stylus Dapp";
+const title = "VERDICT — AI-Refereed Escrow";
+const titleTemplate = "%s | VERDICT";
 const description = "Built with 🏗 Scaffold-Stylus";
 
 export const metadata: Metadata = {
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     description,
   },
   icons: {
-    icon: [{ url: "/favicon.png", sizes: "32x32", type: "image/png" }],
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
   },
 };
 
